@@ -29,11 +29,15 @@ jobs:
   build-and-publish:
     runs-on: [ self-hosted, linux, k3d-150 ]
     steps:
+      # KHONG dung flow-mapping { } cho gia tri co ${{ }} -> cap }} xung dot dau } -> YAML loi
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0, token: ${{ secrets.GITHUB_TOKEN }} }
+        with:
+          fetch-depth: 0
+          # khong can token: - checkout tu persist GITHUB_TOKEN, da co permissions.contents:write
 
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
+        with:
+          node-version: '20'
 
       - name: Test
         working-directory: app
