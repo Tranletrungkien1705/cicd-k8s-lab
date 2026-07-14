@@ -14,7 +14,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # REGISTRY = ten registry TRONG cluster (manifest dung ten nay de k8s pull)
   REGISTRY: k3d-registry.localhost:5000
+  # PUSH_REGISTRY = ten de docker PUSH (localhost -> docker cho HTTP, khong bao "HTTPS client")
+  #   cung 1 registry k3d, chi khac ten truy cap -> pull van dung REGISTRY o tren
+  PUSH_REGISTRY: localhost:5000
   IMAGE: lab-app
 
 jobs:
@@ -38,9 +42,9 @@ jobs:
         run: |
           TAG="${GITHUB_SHA::12}"
           docker build --build-arg APP_VERSION="$TAG" \
-            -t "$REGISTRY/$IMAGE:$TAG" -t "$REGISTRY/$IMAGE:latest" .
-          docker push "$REGISTRY/$IMAGE:$TAG"
-          docker push "$REGISTRY/$IMAGE:latest"
+            -t "$PUSH_REGISTRY/$IMAGE:$TAG" -t "$PUSH_REGISTRY/$IMAGE:latest" .
+          docker push "$PUSH_REGISTRY/$IMAGE:$TAG"
+          docker push "$PUSH_REGISTRY/$IMAGE:latest"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
 
       - name: Bump tag trong manifest (GitOps commit)
