@@ -1,0 +1,6 @@
+# Repo nay deploy len Linux (WSL/k8s) -> ep LF cho script & manifest, tranh vo bash boi CRLF.
+* text=auto eol=lf
+*.sh text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+Dockerfile text eol=lf
