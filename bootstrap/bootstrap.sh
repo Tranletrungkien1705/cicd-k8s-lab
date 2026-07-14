@@ -57,7 +57,8 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
 # --- 5) Argo CD --------------------------------------------------------------
 info "Cai Argo CD"
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+# --server-side: CRD applicationsets qua lon cho client-side apply (annotation >262KB)
+kubectl apply --server-side --force-conflicts -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl -n argocd rollout status deploy/argocd-server --timeout=5m
 # Ingress cho UI Argo (argocd.localhost:8080). Tat TLS noi bo cho don gian lab.
 kubectl -n argocd patch configmap argocd-cmd-params-cm --type merge -p '{"data":{"server.insecure":"true"}}'
