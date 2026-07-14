@@ -42,7 +42,7 @@ setTimeout(() => { ready = true; }, 2000); // gia lap warm-up
 
 app.get('/', (req, res) => {
   res.json({
-    message: 'Xin chao tu lab CI/CD + Kubernetes',
+    message: 'Xin chao tu lab CI/CD + Kubernetes - AUTO DEPLOYED qua GitOps!',
     version: VERSION,
     pod: os.hostname(),   // ten pod -> doi khi Argo rollout ban moi
     time: new Date().toISOString(),
