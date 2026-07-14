@@ -14,7 +14,7 @@ spec:
       containers:
         - name: lab-app
           # CI (ci.yml) se sed dong duoi day thanh tag :<git-sha> moi -> commit -> Argo sync
-          image: k3d-registry.localhost:5000/lab-app:latest
+          image: k3d-registry.localhost:5000/lab-app:6a8ecdbc74cb
           ports:
             - { name: http, containerPort: 3000 }
           # Liveness: pod chet -> k8s restart. Readiness: chua san sang -> khong route traffic.
