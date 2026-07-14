@@ -1,0 +1,15 @@
+# Bao Prometheus (kube-prometheus-stack) scrape /metrics cua app -> ve bieu do o Grafana.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: lab-app
+  labels:
+    app: lab-app
+    release: monitoring   # khop serviceMonitorSelector cua helm release 'monitoring'
+spec:
+  selector:
+    matchLabels: { app: lab-app }
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

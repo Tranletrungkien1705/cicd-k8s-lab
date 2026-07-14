@@ -1,0 +1,25 @@
+# Argo CD Application: theo doi thu muc deploy/app trong repo Git nay.
+# Khi CI commit tag image moi -> Argo tu phat hien va sync (GitOps).
+# !!! SUA repoURL cho dung repo cua ban (bootstrap.sh se tu sed neu dat bien REPO_URL).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lab-app
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/CHANGE_ME/cicd-k8s-lab.git
+    targetRevision: main
+    path: deploy/app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: lab
+  syncPolicy:
+    automated:
+      prune: true       # xoa resource khong con trong git
+      selfHeal: true    # ai sua tay tren cluster -> Argo keo ve dung git
+    syncOptions:
+      - CreateNamespace=true

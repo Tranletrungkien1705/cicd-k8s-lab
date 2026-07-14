@@ -1,0 +1,55 @@
+# CI (GitOps): build + test + push image -> bump tag trong manifest -> commit.
+# Argo CD tren cluster tu phat hien commit va sync. CI KHONG cham truc tiep cluster.
+# Chay tren self-hosted runner o WSL2 may 150 (co docker + thay registry k3d).
+name: CI lab-app
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'app/**', '.github/workflows/ci.yml' ]   # chi build khi app doi
+  workflow_dispatch:
+
+concurrency:
+  group: ci-lab-app
+  cancel-in-progress: true
+
+env:
+  REGISTRY: k3d-registry.localhost:5000
+  IMAGE: lab-app
+
+jobs:
+  build-and-publish:
+    runs-on: [ self-hosted, linux, k3d-150 ]
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0, token: ${{ secrets.GITHUB_TOKEN }} }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - name: Test
+        working-directory: app
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+
+      - name: Build + push image (:sha)
+        working-directory: app
+        run: |
+          TAG="${GITHUB_SHA::12}"
+          docker build --build-arg APP_VERSION="$TAG" \
+            -t "$REGISTRY/$IMAGE:$TAG" -t "$REGISTRY/$IMAGE:latest" .
+          docker push "$REGISTRY/$IMAGE:$TAG"
+          docker push "$REGISTRY/$IMAGE:latest"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Bump tag trong manifest (GitOps commit)
+        run: |
+          FILE=deploy/app/deployment.yaml
+          sed -i -E "s#(image: ${REGISTRY}/${IMAGE}):.*#\1:${TAG}#" "$FILE"
+          if git diff --quiet; then echo "Khong doi tag, bo qua."; exit 0; fi
+          git config user.name  "ci-bot"
+          git config user.email "ci-bot@lab.local"
+          git add "$FILE"
+          git commit -m "ci: deploy lab-app:${TAG} [skip ci]"
+          git push origin main

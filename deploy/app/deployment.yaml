@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-app
+  labels: { app: lab-app }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: lab-app }
+  template:
+    metadata:
+      labels: { app: lab-app }
+    spec:
+      containers:
+        - name: lab-app
+          # CI (ci.yml) se sed dong duoi day thanh tag :<git-sha> moi -> commit -> Argo sync
+          image: k3d-registry.localhost:5000/lab-app:latest
+          ports:
+            - { name: http, containerPort: 3000 }
+          # Liveness: pod chet -> k8s restart. Readiness: chua san sang -> khong route traffic.
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits:   { cpu: 200m, memory: 128Mi }
+      # rolling update: khong bao gio down toan bo khi deploy ban moi
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
