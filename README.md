@@ -1,7 +1,38 @@
-# Lab CI/CD + Kubernetes (GitOps) — nhỏ mà đủ chuẩn
+# cicd-k8s-lab — CI/CD + Kubernetes (GitOps)
 
-Một hệ thống CI/CD hoàn chỉnh để **học**, chạy gọn trên **máy 150 (WSL2/Docker)** bằng **k3d** (k3s-in-Docker).
-Đủ 5 mảnh của một pipeline hiện đại: **CI → Registry riêng → GitOps (Argo CD) → Kubernetes → Monitoring**.
+![CI](https://github.com/Tranletrungkien1705/cicd-k8s-lab/actions/workflows/ci.yml/badge.svg)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white)
+![Argo CD](https://img.shields.io/badge/Argo_CD-EF7B4D?logo=argo&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+
+> Một pipeline CI/CD **hiện đại, hoàn chỉnh**, tự tay dựng và **chạy thật**: một `git push` là code tự
+> build → đóng image → cập nhật manifest → **Argo CD tự đồng bộ** → rolling update trên Kubernetes,
+> kèm giám sát Prometheus/Grafana. Đủ 5 mảnh: **CI → Registry riêng → GitOps → Kubernetes → Monitoring**.
+
+```mermaid
+flowchart LR
+  A["git push"] --> B["GitHub Actions<br/>test · build image"]
+  B --> C[("Private registry")]
+  B --> D["bump manifest<br/>commit [skip ci]"]
+  D --> E{{"Argo CD<br/>auto-sync"}}
+  C --> F["Kubernetes<br/>rolling update"]
+  E --> F
+  F --> G["Ingress-nginx<br/>(app live)"]
+  F --> H["Prometheus → Grafana"]
+```
+
+### Chứng minh điều gì
+CI/CD · GitOps (declarative, Git là nguồn sự thật) · Kubernetes (Deployment/Service/Ingress/probes/rolling
+update) · container hoá · registry riêng · observability · scripting bootstrap idempotent. **Không ai
+`kubectl apply` tay** — CI chỉ *ghi vào Git*, Argo CD *đọc từ Git* rồi tự đồng bộ cluster.
+
+### Sự cố kỹ thuật đã tự chẩn đoán & fix (không chỉ chạy theo tutorial)
+- **YAML `${{ }}` trong flow-mapping `{ }`** → cặp `}}` xung đột `}` đóng mapping → workflow **startup_failure** (`jobs:[]`). Fix: block-style `with:`.
+- **Argo CRD > 262KB** → `kubectl apply` client-side fail annotation limit → dùng `--server-side --force-conflicts`.
+- **`docker push` báo "HTTP response to HTTPS client"** → tách tên push `localhost:5000` (HTTP) vs tên in-cluster `k3d-registry.localhost:5000` (pull) — cùng registry.
+- **Background job chết khi session đóng** → chạy dưới `systemd-run` thay vì `nohup`.
+- **Giới hạn RAM WSL** làm OOM stack monitoring → điều chỉnh `.wslconfig`, không đụng dịch vụ đang chạy.
 
 ## Vòng đời (điều bạn sẽ thấy tận mắt)
 
