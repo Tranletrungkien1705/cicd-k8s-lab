@@ -1,0 +1,16 @@
+# Deploy live demo len Render (free, KHONG can the tin dung).
+# Cach dung: render.com -> New + -> Blueprint -> chon repo nay -> Apply.
+# Render doc file nay, build Docker tu app/Dockerfile, cho URL public.
+services:
+  - type: web
+    name: cicd-k8s-lab-demo
+    runtime: docker
+    dockerfilePath: ./app/Dockerfile
+    dockerContext: ./app
+    plan: free
+    region: singapore
+    healthCheckPath: /healthz
+    autoDeploy: true          # push main -> Render tu build lai
+    envVars:
+      - key: APP_VERSION
+        value: render-live
