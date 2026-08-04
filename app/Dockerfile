@@ -12,6 +12,7 @@ ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
 COPY --from=deps /app/node_modules ./node_modules
 COPY server.js ./
+COPY public ./public
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=3s --retries=3 \

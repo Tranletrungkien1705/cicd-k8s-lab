@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Live Demo · CI/CD + Kubernetes (GitOps)</title>
+<style>
+  :root{--bg:#0d0e12;--card:#161a22;--card2:#1c2130;--ink:#edeef2;--mut:#9aa0ad;--acc:#9d8cff;
+    --ok:#34d399;--fail:#f87171;--run:#fbbf24;--hair:#262c39;--mono:ui-monospace,"Cascadia Code",Menlo,Consolas,monospace}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1000px 500px at 50% -8%,#1a1533,transparent),var(--bg);
+    color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6}
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px}
+  a{color:var(--acc)}
+  .mono{font-family:var(--mono)}
+  header{padding:52px 0 30px;text-align:center}
+  .chip{display:inline-flex;align-items:center;gap:.5em;font:600 .78rem var(--mono);color:#052e1f;
+    background:var(--ok);padding:.32em .8em;border-radius:999px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#052e1f;animation:p 1.8s infinite}
+  @keyframes p{0%{box-shadow:0 0 0 0 rgba(5,46,31,.6)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:-.02em;margin:18px 0 8px;text-wrap:balance}
+  .sub{color:var(--mut);max-width:56ch;margin:0 auto}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair);
+    border-radius:14px;overflow:hidden;margin:26px 0}
+  .cell{background:var(--card);padding:14px 12px;text-align:center}
+  .cell .k{font:.62rem var(--mono);color:var(--mut);text-transform:uppercase;letter-spacing:.1em}
+  .cell .v{font:600 1rem var(--mono);margin-top:4px;word-break:break-all}.cell .v.acc{color:var(--acc)}
+  section{padding:34px 0;border-top:1px solid var(--hair)}
+  h2{font-size:1.25rem;letter-spacing:-.01em;margin:0 0 4px}
+  .lead{color:var(--mut);margin:0 0 20px;font-size:.92rem}
+  /* pipeline */
+  .pipe{display:flex;gap:0;overflow-x:auto;padding:8px 0}
+  .stage{flex:1 0 auto;min-width:120px;padding:0 12px;position:relative}
+  .stage+.stage::before{content:"→";position:absolute;left:-.5em;top:2px;color:var(--mut);font-family:var(--mono)}
+  .stage .k{font:600 .74rem var(--mono);color:var(--acc)}
+  .stage .v{font-size:.82rem;color:var(--mut)}
+  .stage.active .v{color:var(--ink)}.stage.active{transform:translateY(-2px);transition:.3s}
+  .stage.done .k::after{content:" ✓";color:var(--ok)}
+  /* feed */
+  .feed{border:1px solid var(--hair);border-radius:12px;overflow:hidden;background:var(--card)}
+  .frow{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:11px 15px;
+    border-top:1px solid var(--hair);text-decoration:none;color:inherit}
+  .frow:first-child{border-top:none}.frow:hover{background:var(--card2)}
+  .fi{width:8px;height:8px;border-radius:50%}.fi.ok{background:var(--ok)}.fi.fail{background:var(--fail)}
+  .fi.run{background:var(--run);animation:p 1.5s infinite}.fi.other{background:var(--mut)}
+  .ft{font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fm{font:.68rem var(--mono);color:var(--mut);margin-top:1px}
+  .fr{font:.7rem var(--mono);color:var(--mut);text-align:right;white-space:nowrap}
+  .empty{padding:16px;color:var(--mut);font-size:.85rem}
+  /* concepts */
+  .concepts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .cc{background:var(--card);border:1px solid var(--hair);border-radius:12px;padding:16px}
+  .cc h3{margin:0 0 4px;font-size:.98rem}.cc h3 span{font:.62rem var(--mono);color:var(--acc);letter-spacing:.06em}
+  .cc p{margin:0;color:var(--mut);font-size:.85rem}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .tag{font:.7rem var(--mono);background:var(--card2);color:var(--ink);padding:.24em .55em;border-radius:6px}
+  .links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:30px 0 60px}
+  .btn{text-decoration:none;color:var(--ink);border:1px solid var(--hair);border-radius:10px;
+    padding:.7em 1.1em;font:.85rem var(--mono)}.btn:hover{border-color:var(--acc);color:var(--acc)}
+  .btn.pri{background:var(--acc);color:#0d0e12;border-color:transparent}
+  @media(max-width:560px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="chip"><span class="dot"></span>LIVE · deployed by pipeline</span>
+    <h1>Bạn đang xem một container được deploy <span style="color:var(--acc)">tự động</span>.</h1>
+    <p class="sub">Trang này chạy trong 1 container. Nó lên đây qua nguyên chuỗi CI/CD → Kubernetes → GitOps
+      bên dưới — không ai deploy tay. Dưới đây là luồng, lịch sử thật, và khái niệm để bạn hiểu.</p>
+    <div class="grid" id="status">
+      <div class="cell"><div class="k">status</div><div class="v acc" id="st">…</div></div>
+      <div class="cell"><div class="k">version (git sha)</div><div class="v" id="ver">…</div></div>
+      <div class="cell"><div class="k">instance</div><div class="v" id="host">…</div></div>
+      <div class="cell"><div class="k">uptime</div><div class="v" id="up">…</div></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>1 · Luồng CI/CD</h2>
+    <p class="lead">Điều xảy ra mỗi lần <span class="mono">git push</span> (các bước sáng lần lượt = mô phỏng 1 lần deploy):</p>
+    <div class="pipe" id="pipe">
+      <div class="stage"><div class="k">git push</div><div class="v">Commit lên main</div></div>
+      <div class="stage"><div class="k">CI</div><div class="v">Test · Build image</div></div>
+      <div class="stage"><div class="k">registry</div><div class="v">Push image :sha</div></div>
+      <div class="stage"><div class="k">GitOps</div><div class="v">Bump manifest · Argo sync</div></div>
+      <div class="stage"><div class="k">k8s</div><div class="v">Rolling update</div></div>
+      <div class="stage"><div class="k">live</div><div class="v">Bản mới chạy</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2 · Lịch sử pipeline <span style="font:.7rem var(--mono);color:var(--mut)">— thật, live từ GitHub API</span></h2>
+    <p class="lead">Từng lần build/deploy thật của repo này (trạng thái · thời gian · commit):</p>
+    <div class="feed" id="feed"><div class="empty">Đang tải lịch sử…</div></div>
+  </section>
+
+  <section>
+    <h2>3 · Khái niệm cốt lõi</h2>
+    <p class="lead">6 mảnh ghép của một pipeline hiện đại:</p>
+    <div class="concepts">
+      <div class="cc"><h3>CI <span>Continuous Integration</span></h3><p>Có code mới → tự test + build thành Docker image. Bắt lỗi sớm, luôn có bản sạch.</p></div>
+      <div class="cc"><h3>CD <span>Continuous Deployment</span></h3><p>Sau CI, tự phát hành ra môi trường chạy — không bấm tay.</p></div>
+      <div class="cc"><h3>Container <span>Docker</span></h3><p>Đóng gói app + mọi thứ nó cần vào 1 "hộp" chạy giống nhau ở mọi máy. Image = khuôn; Registry = kho.</p></div>
+      <div class="cc"><h3>Kubernetes <span>orchestration</span></h3><p>Chạy & quản lý container: Deployment, Service, Ingress, rolling update (zero-downtime), health probes.</p></div>
+      <div class="cc"><h3>GitOps <span>Argo CD</span></h3><p>Git là nguồn sự thật. Argo so Git vs cluster, lệch thì tự sync. Rollback = <span class="mono">git revert</span>.</p></div>
+      <div class="cc"><h3>Observability <span>Prometheus/Grafana</span></h3><p>App phát metrics ở <span class="mono">/metrics</span> → Prometheus thu → Grafana vẽ biểu đồ.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>4 · Kiến trúc &amp; công nghệ</h2>
+    <p class="lead">Bộ công cụ dựng nên hệ thống này:</p>
+    <div class="tags">
+      <span class="tag">GitHub Actions</span><span class="tag">Docker</span><span class="tag">k3d (k3s)</span>
+      <span class="tag">Private registry</span><span class="tag">ingress-nginx</span><span class="tag">Argo CD</span>
+      <span class="tag">Prometheus</span><span class="tag">Grafana</span><span class="tag">Node / Express</span>
+    </div>
+  </section>
+
+  <div class="links">
+    <a class="btn pri" href="https://github.com/Tranletrungkien1705/cicd-k8s-lab/blob/main/docs/CI-CD-GUIDE.md">📖 Tài liệu học đầy đủ</a>
+    <a class="btn" href="https://github.com/Tranletrungkien1705/cicd-k8s-lab">◈ Source code</a>
+    <a class="btn" href="/api">{ } /api (JSON)</a>
+    <a class="btn" href="https://tranletrungkien1705.github.io/">← Portfolio</a>
+  </div>
+
+</div>
+
+<script>
+  var REPO="Tranletrungkien1705/cicd-k8s-lab";
+  function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]})}
+  function ago(iso){var s=Math.floor((Date.now()-new Date(iso))/1000);if(isNaN(s))return"";
+    if(s<60)return"vừa xong";var m=(s/60)|0;if(m<60)return m+" phút trước";var h=(m/60)|0;if(h<24)return h+" giờ trước";
+    var d=(h/24)|0;if(d<30)return d+" ngày trước";return((d/30)|0)+" tháng trước"}
+
+  /* --- status tự thân (fetch /api) --- */
+  function loadStatus(){
+    fetch("/api").then(function(r){return r.json()}).then(function(d){
+      document.getElementById("st").textContent="🟢 "+(d.status||"live");
+      document.getElementById("ver").textContent=d.version||"—";
+      document.getElementById("host").textContent=(d.host||"—").slice(0,22);
+      var u=d.uptime_s||0;
+      document.getElementById("up").textContent=u<60?u+"s":((u/60)|0)+"m "+(u%60)+"s";
+    }).catch(function(){document.getElementById("st").textContent="…"});
+  }
+  loadStatus(); setInterval(loadStatus,5000);
+
+  /* --- pipeline animation --- */
+  var stages=[].slice.call(document.querySelectorAll("#pipe .stage"));
+  if(!matchMedia("(prefers-reduced-motion:reduce)").matches){
+    function runPipe(){stages.forEach(function(s){s.classList.remove("active","done")});var j=0;
+      (function n(){if(j>0)stages[j-1].classList.add("done");
+        if(j<stages.length){stages[j].classList.add("active");j++;setTimeout(n,780)}
+        else{stages.forEach(function(s){s.classList.add("done")});
+          setTimeout(function(){stages.forEach(function(s){s.classList.remove("done")});setTimeout(runPipe,700)},2400)}})()}
+    setTimeout(runPipe,600);
+  }
+
+  /* --- lịch sử pipeline thật (GitHub Actions API) --- */
+  fetch("https://api.github.com/repos/"+REPO+"/actions/runs?per_page=8")
+    .then(function(r){return r.ok?r.json():{workflow_runs:[]}})
+    .then(function(j){
+      var runs=(j.workflow_runs||[]);var f=document.getElementById("feed");
+      if(!runs.length){f.innerHTML='<div class="empty">Chưa tải được (giới hạn API). Xem trực tiếp trên <a href="https://github.com/'+REPO+'/actions">GitHub Actions →</a></div>';return}
+      f.innerHTML=runs.map(function(r){
+        var c=r.conclusion==="success"?"ok":(r.conclusion==="failure"||r.conclusion==="startup_failure")?"fail":(r.status!=="completed"?"run":"other");
+        var t=(r.display_title||r.name||"run").split("\n")[0];
+        return '<a class="frow" href="'+esc(r.html_url)+'" target="_blank" rel="noopener">'+
+          '<span class="fi '+c+'"></span><div><div class="ft">'+esc(t)+'</div>'+
+          '<div class="fm">'+esc(r.name)+' · #'+esc((r.head_sha||"").slice(0,7))+'</div></div>'+
+          '<div class="fr">'+esc(ago(r.run_started_at||r.created_at))+'</div></a>';
+      }).join("");
+    }).catch(function(){});
+</script>
+</body>
+</html>
