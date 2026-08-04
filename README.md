@@ -6,6 +6,8 @@
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
+### 📖 [Tài liệu học đầy đủ → docs/CI-CD-GUIDE.md](docs/CI-CD-GUIDE.md) &nbsp;·&nbsp; ▶ [Live demo](https://cicd-k8s-lab-demo.onrender.com/)
+
 > Một pipeline CI/CD **hiện đại, hoàn chỉnh**, tự tay dựng và **chạy thật**: một `git push` là code tự
 > build → đóng image → cập nhật manifest → **Argo CD tự đồng bộ** → rolling update trên Kubernetes,
 > kèm giám sát Prometheus/Grafana. Đủ 5 mảnh: **CI → Registry riêng → GitOps → Kubernetes → Monitoring**.
